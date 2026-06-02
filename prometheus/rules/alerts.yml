@@ -1,0 +1,11 @@
+groups:
+  - name: app_alerts
+    interval: 10s
+    rules:
+      - alert: HighClicks
+        expr: app_clicks_total >= 10
+        labels:
+          severity: warning
+        annotations:
+          summary: "Счётчик нажатий достиг {{ $value }}"
+          description: "Пользователи нажали кнопку {{ $value }} раз. Пора проверить нагрузку."

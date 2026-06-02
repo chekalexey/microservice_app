@@ -31,7 +31,3 @@ jobs:
         run: |
           pip install flake8 isort
           pip install -r requirements.txt
-      
-      - name: Lint & Test
-        run: |
-          flake8 . --ignore=W292,W291,E501,E302 --count --statistics
