@@ -113,18 +113,6 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-  fluentd:
-    image: fluent/fluentd:latest
-    container_name: fluentd
-    volumes:
-      - ./fluentd/conf/fluent.conf:/fluentd/etc/fluent.conf
-    ports:
-      - "24224:24224"
-    depends_on:
-      elasticsearch:
-        condition: service_healthy
-    restart: unless-stopped
-
 volumes:
   api_data:
   prometheus_data:

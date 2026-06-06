@@ -10,6 +10,8 @@ from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExport
 from opentelemetry.instrumentation.flask import FlaskInstrumentor
 from opentelemetry.instrumentation.requests import RequestsInstrumentor
 from elasticsearch import Elasticsearch
+from opentelemetry.propagate import set_global_textmap
+from opentelemetry.propagators.b3 import B3MultiFormat
 import logging
 
 app = Flask(__name__)
@@ -17,7 +19,7 @@ COUNTER_FILE = '/data/counter.json'
 
 # elasticsearch logs
 es = Elasticsearch(
-    [os.environ.get('ELASTICSEARCH_URL', 'http://elasticsearch:9200')],
+    [os.environ.get('ELASTICSEARCH_URL', 'http://elasticsearch.app:9200')],
     request_timeout=30
 )
 
@@ -27,8 +29,10 @@ logger = logging.getLogger(__name__)
 # jaeger
 provider = TracerProvider()
 trace.set_tracer_provider(provider)
+set_global_textmap(B3MultiFormat())
 
-otlp_endpoint = "http://jaeger:4318/v1/traces"
+jaeger_host = os.environ.get('JAEGER_HOST', 'jaeger')
+otlp_endpoint = f"http://{jaeger_host}:4318/v1/traces"
 exporter = OTLPSpanExporter(endpoint=otlp_endpoint)
 
 span_processor = BatchSpanProcessor(exporter)

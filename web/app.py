@@ -16,7 +16,7 @@ WEB_REQUESTS = Counter('web_requests_total',
                        'Total web requests', ['endpoint'])
 
 es = Elasticsearch(
-    [os.environ.get('ELASTICSEARCH_URL', 'http://elasticsearch:9200')],
+    [os.environ.get('ELASTICSEARCH_URL', 'http://elasticsearch.app:9200')],
     request_timeout=30
 )
 
@@ -29,7 +29,8 @@ API_URL = os.environ.get('API_URL', 'http://api:5000')
 provider = TracerProvider()
 trace.set_tracer_provider(provider)
 
-otlp_endpoint = "http://jaeger:4318/v1/traces"
+jaeger_host = os.environ.get('JAEGER_HOST', 'jaeger')
+otlp_endpoint = f"http://{jaeger_host}:4318/v1/traces"
 exporter = OTLPSpanExporter(endpoint=otlp_endpoint)
 
 span_processor = BatchSpanProcessor(exporter)
@@ -73,16 +74,6 @@ HTML = """
             color: white;
             border: none;
             padding: 14px 32px;
-            font-size: 18px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        .btn:hover { background: #2ea043; }
-        .btn:active { background: #196c2e; }
-        .error { color: #f85149; font-size: 14px; margin-top: 12px; }
-        .footer { margin-top: 20px; font-size: 12px; color: #484f58; }
-        .footer span { margin: 0 8px; }
     </style>
 </head>
 <body>
