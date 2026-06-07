@@ -1,0 +1,64 @@
+---
+- name: full deploy
+  hosts: localhost
+  gather_facts: no
+  
+  vars:
+    app_namespace: app
+    monitoring_namespace: monitoring
+    project_root: "{{ playbook_dir }}/.."
+  
+  tasks:
+    - name: 1/7 create namespace
+      command: kubectl apply -f {{ project_root }}/kubernetes/namespace.yaml
+      register: result
+      changed_when: "'created' in result.stdout or 'configured' in result.stdout"
+    
+    - name: 2/7 deploy elasticsearch
+      command: kubectl apply -f {{ project_root }}/kubernetes/app/elasticsearch.yaml
+      register: result
+      changed_when: "'created' in result.stdout or 'configured' in result.stdout"
+    
+    - name: 3/7 launch elasticsearch
+      command: kubectl wait --for=condition=ready pod -l app=elasticsearch -n {{ app_namespace }} --timeout=120s
+      register: result
+      until: result.rc == 0
+      retries: 12
+      delay: 10
+      ignore_errors: yes
+    
+    - name: 4/7 deploy API and Web
+      command: kubectl apply -f {{ project_root }}/kubernetes/app/
+      register: result
+      changed_when: "'created' in result.stdout or 'configured' in result.stdout"
+    
+    - name: 5/7 launch API
+      command: kubectl wait --for=condition=ready pod -l app=api -n {{ app_namespace }} --timeout=120s
+      register: result
+      until: result.rc == 0
+      retries: 12
+      delay: 5
+    
+    - name: 6/7 deploy monitoring
+      command: kubectl apply -f {{ project_root }}/kubernetes/monitoring/
+      register: result
+      changed_when: "'created' in result.stdout or 'configured' in result.stdout"
+      ignore_errors: yes
+    
+    - name: 7/7 status check
+      command: kubectl get pods -n {{ app_namespace }}
+      register: pods
+    
+    - name: results
+      debug:
+        msg:
+          - " deploy succes!"
+          - ""
+          - " pods status namespace '{{ app_namespace }}':"
+          - "{{ pods.stdout_lines }}"
+          - ""
+          - " services:"
+          - "   Web UI:  http://localhost:30080"
+          - "   Grafana: http://localhost:30030 (admin/admin)"
+          - "   Jaeger:  http://localhost:30040"
+          - "   Kibana:  http://localhost:30050"

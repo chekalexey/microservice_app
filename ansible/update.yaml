@@ -1,0 +1,40 @@
+---
+- name: update
+  hosts: localhost
+  
+  vars:
+    app_namespace: app
+    
+  tasks:
+    - name: rebuild Docker image API
+      command: docker build -t api:latest ../api
+      register: build_api
+      changed_when: "'Successfully built' in build_api.stdout"
+    
+    - name: rebuild Docker image Web
+      command: docker build -t web:latest ../web
+      register: build_web
+      changed_when: "'Successfully built' in build_web.stdout"
+    
+    - name: load image in Kind
+      command: kind load docker-image api:latest web:latest
+      ignore_errors: yes
+    
+    - name: restart API deployment
+      command: kubectl rollout restart deployment api -n {{ app_namespace }}
+    
+    - name: restart Web deployment
+      command: kubectl rollout restart deployment web -n {{ app_namespace }}
+    
+    - name: update API
+      command: kubectl rollout status deployment api -n {{ app_namespace }} --timeout=60s
+    
+    - name: update Web
+      command: kubectl rollout status deployment web -n {{ app_namespace }} --timeout=60s
+    
+    - name: status check
+      command: kubectl get pods -n {{ app_namespace }}
+      register: pods
+    
+    - debug:
+        msg: "{{ pods.stdout_lines }}"
