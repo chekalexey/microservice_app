@@ -1,0 +1,32 @@
+---
+- name: status check
+  hosts: localhost
+  
+  tasks:
+    - name: pods in namespace app
+      command: kubectl get pods -n app
+      register: app_pods
+    
+    - name: pods in namespace monitoring
+      command: kubectl get pods -n monitoring
+      register: monitoring_pods
+      ignore_errors: yes
+    
+    - name: services
+      command: kubectl get svc -A
+      register: services
+    
+    - name: results
+      debug:
+        msg:
+          - " status "
+          - ""
+          - "app:"
+          - "{{ app_pods.stdout_lines }}"
+          - ""
+          - "monitoring:"
+          - "{{ monitoring_pods.stdout_lines | default(['no pods in monitoring']) }}"
+          - ""
+          - "services:"
+          - "{{ services.stdout_lines }}"
+          - ""
